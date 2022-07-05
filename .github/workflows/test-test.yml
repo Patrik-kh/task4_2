@@ -1,30 +1,22 @@
-name: PullRequestConflicting
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+name: "Maintenance"
 on:
+  # So that PRs touching the same files as the push are updated
   push:
-    branches: [ master, dev ]
-  pull_request:
-    types: [opened, synchronize]
-    branches: [ master, dev ]
+  # So that the `dirtyLabel` is removed if conflicts are resolve
+  # We recommend `pull_request_target` so that github secrets are available.
+  # In `pull_request` we wouldn't be able to change labels of fork PRs
+  pull_request_target:
+    types: [synchronize]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  main:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: check if prs are dirty
-      uses: eps1lon/actions-label-merge-conflict@releases/2.x
-      with:
-        dirtyLabel: "conflicting"
-        repoToken: "${{ secrets.GITHUB_TOKEN  }}"
-        continueOnMissingPermissions: true
-        commentOnDirty: 'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.'
-        commentOnClean: 'Conflicts have been resolved. A maintainer will take a look shortly.'
-      env:
-        LABELING_TOKEN: ${{secrets.GITHUB_TOKEN }}
+      - name: check if prs are dirty
+        uses: eps1lon/actions-label-merge-conflict@releases/2.x
+        with:
+          dirtyLabel: "conflicting"
+          removeOnDirtyLabel: "PR: ready to ship"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          commentOnDirty: "This pull request has conflicts, please resolve those before we can evaluate the pull request."
+          commentOnClean: "Conflicts have been resolved. A maintainer will review the pull request shortly."
