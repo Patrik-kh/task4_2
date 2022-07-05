@@ -1,0 +1,42 @@
+name: GitHub Actions create-pull-request
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - 'master'
+
+jobs:
+
+  CreatePatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create Patch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch
+
+          git diff 'origin/${{ github.base_ref }}' 'origin/${{ github.head_ref }}' > my.patch
+          git checkout dev
+          git checkout -b '${{ github.head_ref }}_bot_dev'
+          git apply -3 my.patch
+          rm my.patch
+          git add .
+          git commit -am 'This is an auto-generated PR '${{ github.head_ref }}' to dev'
+          git push -f origin '${{ github.head_ref }}_bot_dev'
+
+  CreatePullRequest:
+    needs: CreatePatch
+    runs-on: ubuntu-latest
+    steps:
+      - name: pull-request-action
+        uses: vsoch/pull-request-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PULL_REQUEST_BRANCH: dev
+          PULL_REQUEST_FROM_BRANCH: '${{ github.head_ref }}_bot_dev'
+          PULL_REQUEST_TITLE: This is an auto-generated PR ${{ github.head_ref }} to dev
+          PULL_REQUEST_REVIEWERS: ${{ github.actor }}
+          PULL_REQUEST_UPDATE: true
