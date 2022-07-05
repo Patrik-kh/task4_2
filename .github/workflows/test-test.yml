@@ -1,10 +1,8 @@
 name: "Maintenance"
-
+name: GitHub Actions create-pull-request
 on:
   pull_request:
     types: [opened, synchronize]
-    branches:
-      - 'master'
 
 jobs:
   main:
